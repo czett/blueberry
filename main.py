@@ -1,18 +1,9 @@
-import pvporcupine
+import pvporcupine, re, io, pyttsx3, record, random, string, os, time, ollama
 from pvrecorder import PvRecorder
-import record
-import random
-import string
-import os
-import time
-import ollama
 from gtts import gTTS
+from espeakng import ESpeakNG
 import sounddevice as sd
 import soundfile as sf
-import re
-import io
-import pyttsx3
-from espeakng import ESpeakNG
 
 def play_startup_sound():
     file_path = "assets/startup.mp3"
