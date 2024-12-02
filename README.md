@@ -1,3 +1,5 @@
+![banner where?](https://github.com/czett/blueberry/blob/main/assets/banner.png)
+
 # Blueberry
 
 Blueberry ist ein sprachgesteuertes System, das Sprachbefehle erkennt, darauf reagiert und Antworten generiert. Es nutzt Ollama und das Mistral-Modell für KI-basierte Antworten sowie Speech-to-Text für die Spracherkennung.
