@@ -20,6 +20,12 @@ def play_startup_sound():
     sd.play(data, samplerate)
     sd.wait()
 
+def listen_for_command():
+    name = audio_name(16)
+    record.recognize_from_mic(name)
+    return name
+
+
 def ask_and_speak(prompt: str):
     try:
         stream = ollama.chat(model="mistral", messages=[{"role": "user", "content": prompt}], stream=True)
@@ -33,19 +39,23 @@ def ask_and_speak(prompt: str):
 
             print(chunk_text, end="", flush=True)
 
-            sentences = re.split(r'([.!?])', buffer)
+            # Split only at proper sentence endings using regex
+            sentences = re.split(r'(?<!\d)(?<!\d[.])(?<!\w[.])([.!?])(?=\s|\n|$)', buffer)  
 
+            # Reconstruct and process sentences
+            temp_buffer = ""
             for i in range(0, len(sentences) - 1, 2):
-                sentence = sentences[i] + sentences[i + 1]
-                text_to_speech(sentence.strip())
-                buffer = buffer[len(sentence):]
+                temp_buffer = sentences[i] + sentences[i + 1]
+                text_to_speech(temp_buffer.strip())
+                buffer = buffer[len(temp_buffer):]
 
+        # Process any remaining buffer
         if buffer.strip():
-            es_text_to_speech(buffer.strip())
+            text_to_speech(buffer.strip())
 
         return combined_text
-    except:
-        pass
+    except Exception as e:
+        print(f"Error in ask_and_speak: {e}")
 
 def text_to_speech(text):
     tts = gTTS(text=text, lang="de")
@@ -123,24 +133,18 @@ try:
 
     while True:
         keyword_index = porcupine.process(recoder.read())
-        go_again = True
         if keyword_index >= 0:
-            print(f"...")
             play_startup_sound()
-            check_files()
-
-            name = audio_name(16)
-            record.recognize_from_mic(name)
-            
-            text = record.file_recognize(name)[1]
-            print("verstandener Text: " + text)
-
+            command_file = listen_for_command()
+            text = record.file_recognize(command_file)[1]
+            print("Verstandener Text: " + text)
             ask_and_speak(text)
 
             lfu = listen_for_follow_up(duration=10)
 
-            while lfu[0] == True:
+            while lfu[0]:
                 ask_and_speak(lfu[1])
+                print("\n\n")
                 lfu = listen_for_follow_up(duration=10)
 
             print("Kein weiteres Gespräch erkannt.")
