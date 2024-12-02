@@ -14,6 +14,12 @@ import io
 import pyttsx3
 from espeakng import ESpeakNG
 
+def play_startup_sound():
+    file_path = "assets/startup.mp3"
+    data, samplerate = sf.read(file_path)
+    sd.play(data, samplerate)
+    sd.wait()
+
 def ask_and_speak(prompt: str):
     try:
         stream = ollama.chat(model="mistral", messages=[{"role": "user", "content": prompt}], stream=True)
@@ -119,7 +125,8 @@ try:
         keyword_index = porcupine.process(recoder.read())
         go_again = True
         if keyword_index >= 0:
-            print(f"{keywords[keyword_index]} hört zu!")
+            print(f"...")
+            play_startup_sound()
             check_files()
 
             name = audio_name(16)
