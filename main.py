@@ -16,7 +16,6 @@ def listen_for_command():
     record.recognize_from_mic(name)
     return name
 
-
 def ask_and_speak(prompt: str):
     try:
         stream = ollama.chat(model="mistral", messages=[{"role": "user", "content": prompt}], stream=True)
