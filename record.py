@@ -17,11 +17,11 @@ def file_recognize(fn):
         with sr.AudioFile(filename) as source:
             audio = r.record(source)
             text = r.recognize_google(audio, language="de-DE")
-            return text
+            return (True, text)
     except sr.UnknownValueError:
-        return "Google Speech Recognition didn't understand."
+        return (False, "Google Speech Recognition didn't understand.")
     except sr.RequestError as e:
-        return f"Error with Google Speech Recognition: {e}"
+        return (False, f"Error with Google Speech Recognition: {e}")
 
 def recognize_from_mic(fn):
     samplerate = 44100
@@ -65,3 +65,12 @@ def recognize_from_mic(fn):
     
     wav.write(f"audio/{fn}.wav", samplerate, audio_recording)
     sd.wait()
+
+def record_fixed_duration(filename: str, duration: int, samplerate: int = 44100):
+    print(f"Nehme Audio für {duration} Sekunden auf...")
+    audio_recording = sd.rec(int(samplerate * duration), samplerate=samplerate, channels=1, dtype="float32")
+    sd.wait()
+    audio_recording = np.array(audio_recording).flatten()
+    audio_recording = np.int16(audio_recording / np.max(np.abs(audio_recording)) * 32767)  # Normierung
+    wav.write(f"audio/{filename}.wav", samplerate, audio_recording)
+    print(f"Aufnahme abgeschlossen und in Datei {filename}.wav gespeichert.")

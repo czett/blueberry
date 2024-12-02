@@ -99,22 +99,44 @@ def check_files() -> None:
 porcupine = pvporcupine.create(access_key=access_key, keywords=keywords)
 recoder = PvRecorder(device_index=-1, frame_length=porcupine.frame_length)
 
+import time
+
+def listen_for_follow_up(duration: int) -> bool:
+    temp_filename = audio_name(16)
+    record.record_fixed_duration(temp_filename, duration=duration)
+
+    recognized_result = record.file_recognize(temp_filename)
+
+    if recognized_result[0]: # if new text recognized
+        return (True, recognized_result[1])
+    
+    return (False, "")
+
 try:
     recoder.start()
 
     while True:
         keyword_index = porcupine.process(recoder.read())
+        go_again = True
         if keyword_index >= 0:
-            check_files()
             print(f"{keywords[keyword_index]} hört zu!")
+            check_files()
 
             name = audio_name(16)
             record.recognize_from_mic(name)
             
-            text = record.file_recognize(name)
+            text = record.file_recognize(name)[1]
             print("verstandener Text: " + text)
 
-            ai_output = ask_and_speak(text)
+            ask_and_speak(text)
+
+            lfu = listen_for_follow_up(duration=10)
+
+            while lfu[0] == True:
+                ask_and_speak(lfu[1])
+                lfu = listen_for_follow_up(duration=10)
+
+            print("Kein weiteres Gespräch erkannt.")
 
 except KeyboardInterrupt:
     recoder.stop()
