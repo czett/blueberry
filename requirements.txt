@@ -1,0 +1,8 @@
+pvporcupine
+pvrecorder
+pyttsx3
+gTTS
+espeakng
+sounddevice
+soundfile
+ollama
