@@ -115,8 +115,6 @@ def check_files() -> None:
 porcupine = pvporcupine.create(access_key=access_key, keywords=keywords)
 recoder = PvRecorder(device_index=-1, frame_length=porcupine.frame_length)
 
-import time
-
 def listen_for_follow_up(duration: int) -> bool:
     temp_filename = audio_name(16)
     record.record_fixed_duration(temp_filename, duration=duration)
