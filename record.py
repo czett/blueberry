@@ -40,7 +40,7 @@ def recognize_from_mic(fn):
         audio_chunk = audio_chunk.flatten()
         audio_recording.extend(audio_chunk)
         duration += 1
-        if duration >= 3:
+        if duration >= 2:
             break
     
     while True:

@@ -5,6 +5,76 @@ import random
 import string
 import os
 import time
+import ollama
+from gtts import gTTS
+import sounddevice as sd
+import soundfile as sf
+import re
+import io
+import pyttsx3
+from espeakng import ESpeakNG
+
+def ask_and_speak(prompt: str):
+    try:
+        stream = ollama.chat(model="mistral", messages=[{"role": "user", "content": prompt}], stream=True)
+        buffer = ""
+        combined_text = ""
+
+        for chunk in stream:
+            chunk_text = chunk["message"]["content"]
+            combined_text += chunk_text
+            buffer += chunk_text
+
+            print(chunk_text, end="", flush=True)
+
+            sentences = re.split(r'([.!?])', buffer)
+
+            for i in range(0, len(sentences) - 1, 2):
+                sentence = sentences[i] + sentences[i + 1]
+                text_to_speech(sentence.strip())
+                buffer = buffer[len(sentence):]
+
+        if buffer.strip():
+            es_text_to_speech(buffer.strip())
+
+        return combined_text
+    except:
+        pass
+
+def text_to_speech(text):
+    tts = gTTS(text=text, lang="de")
+    audio_buffer = io.BytesIO()
+    tts.write_to_fp(audio_buffer)
+    audio_buffer.seek(0)
+
+    data, samplerate = sf.read(audio_buffer, dtype="float32")
+    sd.play(data, samplerate)
+    sd.wait()
+
+def pyttsx3_text_to_speech(text: str):
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')
+
+    for voice in voices:
+        print(f"Voice: {voice.name}, ID: {voice.id}, Languages: {voice.languages}")
+
+    for voice in voices:
+        if "de" in voice.languages:
+            engine.setProperty('voice', voice.id)
+            break
+
+    engine.setProperty('rate', 300)
+    engine.setProperty('volume', 1.0)
+
+    engine.say(text)
+    engine.runAndWait()
+
+def es_text_to_speech(text: str):
+    tts = ESpeakNG()
+    tts.voice = "de"
+    tts.speed = 150
+    tts.volume = 100
+    tts.say(text)
 
 keywords = ["blueberry"]
 
@@ -42,7 +112,9 @@ try:
             record.recognize_from_mic(name)
             
             text = record.file_recognize(name)
-            print(text)
+            print("verstandener Text: " + text)
+
+            ai_output = ask_and_speak(text)
 
 except KeyboardInterrupt:
     recoder.stop()
