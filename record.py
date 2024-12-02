@@ -67,10 +67,8 @@ def recognize_from_mic(fn):
     sd.wait()
 
 def record_fixed_duration(filename: str, duration: int, samplerate: int = 44100):
-    print(f"Nehme Audio für {duration} Sekunden auf...")
     audio_recording = sd.rec(int(samplerate * duration), samplerate=samplerate, channels=1, dtype="float32")
     sd.wait()
     audio_recording = np.array(audio_recording).flatten()
     audio_recording = np.int16(audio_recording / np.max(np.abs(audio_recording)) * 32767)  # Normierung
     wav.write(f"audio/{filename}.wav", samplerate, audio_recording)
-    print(f"Aufnahme abgeschlossen und in Datei {filename}.wav gespeichert.")
