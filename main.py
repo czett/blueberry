@@ -2,11 +2,12 @@ import pvporcupine, re, io, pyttsx3, record, random, string, os, time, ollama
 from pvrecorder import PvRecorder
 from gtts import gTTS
 from espeakng import ESpeakNG
+import translators as ts
 import sounddevice as sd
 import soundfile as sf
 
-def play_startup_sound():
-    file_path = "assets/startup.mp3"
+def play_sound(fn:str):
+    file_path = f"assets/{fn}.mp3"
     data, samplerate = sf.read(file_path)
     sd.play(data, samplerate)
     sd.wait()
@@ -15,16 +16,19 @@ def listen_for_command():
     name = audio_name(16)
     record.recognize_from_mic(name)
     return name
+    
+def translate(text:str, flang:str, tlang:str):
+    return ts.translate_text(text, to_language=tlang, from_language=flang)
 
 def ask_and_speak(prompt: str):
     try:
-        stream = ollama.chat(model="llama3.2:3b", messages=[{"role": "user", "content": prompt}], stream=True)
+        stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": prompt}], stream=True)
         buffer = ""
         combined_text = ""
 
         for chunk in stream:
             chunk_text = chunk["message"]["content"]
-            chunk_text = chunk_text.replace("*", "")  # Remove all * from the output
+            chunk_text = chunk_text.replace("*", "")  # Entferne alle * aus der Ausgabe
             combined_text += chunk_text
             buffer += chunk_text
 
@@ -37,12 +41,17 @@ def ask_and_speak(prompt: str):
             temp_buffer = ""
             for i in range(0, len(sentences) - 1, 2):
                 temp_buffer = sentences[i] + sentences[i + 1]
-                text_to_speech(temp_buffer.strip())
+
+                # Übersetze den Text ins Deutsche und sprich ihn aus
+                translated_sentence = translate(temp_buffer.strip(), flang="en", tlang="de")
+                text_to_speech(translated_sentence)
+
                 buffer = buffer[len(temp_buffer):]
 
         # Process any remaining buffer
         if buffer.strip():
-            text_to_speech(buffer.strip())
+            translated_buffer = translate(buffer.strip(), flang="en", tlang="de")
+            text_to_speech(translated_buffer)
 
         return combined_text
     except Exception as e:
@@ -123,18 +132,19 @@ try:
     while True:
         keyword_index = porcupine.process(recoder.read())
         if keyword_index >= 0:
-            play_startup_sound()
+            play_sound("startup")
             command_file = listen_for_command()
             text = record.file_recognize(command_file)[1]
             print("Verstandener Text: " + text)
-            ask_and_speak("Fasse dich kurz; Prompt: " + text)
+            en_text = translate(text=text, flang="de", tlang="en")
+            ask_and_speak(en_text)
             check_files()
 
             lfu = listen_for_follow_up(duration=10)
 
             while lfu[0]:
-                ask_and_speak(lfu[1])
                 print("\n\n")
+                ask_and_speak(translate(text=lfu[1], flang="de", tlang="en"))
                 lfu = listen_for_follow_up(duration=10)
 
             print("Kein weiteres Gespräch erkannt.")
