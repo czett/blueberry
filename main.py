@@ -18,19 +18,20 @@ def listen_for_command():
 
 def ask_and_speak(prompt: str):
     try:
-        stream = ollama.chat(model="mistral", messages=[{"role": "user", "content": prompt}], stream=True)
+        stream = ollama.chat(model="llama3.2:3b", messages=[{"role": "user", "content": prompt}], stream=True)
         buffer = ""
         combined_text = ""
 
         for chunk in stream:
             chunk_text = chunk["message"]["content"]
+            chunk_text = chunk_text.replace("*", "")  # Remove all * from the output
             combined_text += chunk_text
             buffer += chunk_text
 
             print(chunk_text, end="", flush=True)
 
-            # Split only at proper sentence endings using regex
-            sentences = re.split(r'(?<!\d)(?<!\d[.])(?<!\w[.])([.!?])(?=\s|\n|$)', buffer)  
+            # Split at proper sentence endings including ":"
+            sentences = re.split(r'(?<!\d)(?<!\d[.])(?<!\w[.])([.!?:])(?=\s|\n|$)', buffer)
 
             # Reconstruct and process sentences
             temp_buffer = ""
@@ -126,7 +127,8 @@ try:
             command_file = listen_for_command()
             text = record.file_recognize(command_file)[1]
             print("Verstandener Text: " + text)
-            ask_and_speak(text)
+            ask_and_speak("Fasse dich kurz; Prompt: " + text)
+            check_files()
 
             lfu = listen_for_follow_up(duration=10)
 
