@@ -135,6 +135,7 @@ try:
             play_sound("startup")
             command_file = listen_for_command()
             text = record.file_recognize(command_file)[1]
+            play_sound("done")
             print("Verstandener Text: " + text)
             en_text = translate(text=text, flang="de", tlang="en")
             ask_and_speak(en_text)
@@ -144,6 +145,7 @@ try:
 
             while lfu[0]:
                 print("\n\n")
+                play_sound("done")
                 ask_and_speak(translate(text=lfu[1], flang="de", tlang="en"))
                 lfu = listen_for_follow_up(duration=10)
 
