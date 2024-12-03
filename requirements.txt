@@ -6,3 +6,4 @@ espeakng
 sounddevice
 soundfile
 ollama
+translators
