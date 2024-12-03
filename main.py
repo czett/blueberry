@@ -1,8 +1,8 @@
 import pvporcupine, re, io, pyttsx3, record, random, string, os, time, ollama, tools
 from pvrecorder import PvRecorder
+from deep_translator import GoogleTranslator
 from gtts import gTTS
 from espeakng import ESpeakNG
-import translators as ts
 import sounddevice as sd
 import soundfile as sf
 
@@ -17,8 +17,8 @@ def listen_for_command():
     record.recognize_from_mic(name)
     return name
     
-def translate(text:str, flang:str, tlang:str):
-    return ts.translate_text(text, to_language=tlang, from_language=flang)
+def translate(text: str, flang: str, tlang: str) -> str:
+    return GoogleTranslator(source=flang, target=tlang).translate(text)
 
 def ask_and_speak(prompt: str):
     try:
@@ -44,8 +44,7 @@ def ask_and_speak(prompt: str):
             for i in range(0, len(sentences) - 1, 2):
                 temp_buffer = sentences[i] + sentences[i + 1]
 
-                translated_sentence = translate(temp_buffer.strip(), flang="en", tlang="de")
-                text_to_speech(translated_sentence)
+                text_to_speech(temp_buffer)
 
                 buffer = buffer[len(temp_buffer):]
 
@@ -59,6 +58,8 @@ def ask_and_speak(prompt: str):
         print(f"Error in ask_and_speak: {e}")
 
 def text_to_speech(text):
+    text = translate(text.strip(), flang="en", tlang="de")
+
     tts = gTTS(text=text, lang="de")
     audio_buffer = io.BytesIO()
     tts.write_to_fp(audio_buffer)
