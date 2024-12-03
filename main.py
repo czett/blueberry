@@ -1,4 +1,4 @@
-import pvporcupine, re, io, pyttsx3, record, random, string, os, time, ollama
+import pvporcupine, re, io, pyttsx3, record, random, string, os, time, ollama, tools
 from pvrecorder import PvRecorder
 from gtts import gTTS
 from espeakng import ESpeakNG
@@ -27,6 +27,10 @@ def ask_and_speak(prompt: str):
         combined_text = ""
 
         for chunk in stream:
+            if chunk is None or "message" not in chunk or "content" not in chunk["message"]:
+                print("Fehler: Ungültige Antwort von der API")
+                continue
+
             chunk_text = chunk["message"]["content"]
             chunk_text = chunk_text.replace("*", "")  # Entferne alle * aus der Ausgabe
             combined_text += chunk_text
@@ -34,15 +38,12 @@ def ask_and_speak(prompt: str):
 
             print(chunk_text, end="", flush=True)
 
-            # Split at proper sentence endings including ":"
             sentences = re.split(r'(?<!\d)(?<!\d[.])(?<!\w[.])([.!?:])(?=\s|\n|$)', buffer)
 
-            # Reconstruct and process sentences
             temp_buffer = ""
             for i in range(0, len(sentences) - 1, 2):
                 temp_buffer = sentences[i] + sentences[i + 1]
 
-                # Übersetze den Text ins Deutsche und sprich ihn aus
                 translated_sentence = translate(temp_buffer.strip(), flang="en", tlang="de")
                 text_to_speech(translated_sentence)
 
@@ -94,8 +95,9 @@ def es_text_to_speech(text: str):
 
 keywords = ["blueberry"]
 
-with open("credentials.yml", "r") as creds:
-    access_key = creds.read()
+with open("credentials.yml", "r") as c:
+    lines = c.readlines()
+    access_key = lines[0].strip()
 
 def audio_name(length: int) -> str:
     return "".join([random.choice(string.ascii_lowercase) for i in range(length)])
@@ -136,9 +138,16 @@ try:
             command_file = listen_for_command()
             text = record.file_recognize(command_file)[1]
             play_sound("done")
-            print("Verstandener Text: " + text)
-            en_text = translate(text=text, flang="de", tlang="en")
-            ask_and_speak(en_text)
+
+            if "wetter" in text.lower():
+                w = tools.weather()
+                print(w)
+                ask_and_speak(f"Formulate a short sentence with this exact information: currently the weather in Dortmund is {w[0]}°C and {w[1]}% probability of rain")
+            else:
+                print("Verstandener Text: " + text)
+                en_text = translate(text=text, flang="de", tlang="en")
+                ask_and_speak(en_text)
+
             check_files()
 
             lfu = listen_for_follow_up(duration=10)
