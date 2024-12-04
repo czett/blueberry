@@ -10,6 +10,11 @@ Blueberry ist ein sprachgesteuertes System, das Sprachbefehle erkennt, darauf re
 - Verarbeitung von Folgeanfragen
 - KI-gestützte Antwortgenerierung mit **Ollama** und dem **llama3.2:1b-Modell**
 
+## Geplant/in Entwicklung
+- Timer
+- Wetter
+- To-Do
+
 ## Installation
 1. Klone das Repository.
 2. Installiere die benötigten Abhängigkeiten. (`pip install -r requirements.txt`)
