@@ -20,6 +20,7 @@ def play_sound(fn:str):
 def listen_for_command():
     name = audio_name(16)
     record.recognize_from_mic(name)
+    play_sound("done")
     return name
     
 def translate(text: str, flang: str, tlang: str) -> str:
@@ -119,9 +120,9 @@ def check_files() -> None:
 porcupine = pvporcupine.create(access_key=access_key, keywords=keywords)
 recoder = PvRecorder(device_index=-1, frame_length=porcupine.frame_length)
 
-def listen_for_follow_up(duration: int) -> bool:
+def listen_for_follow_up() -> bool:
     temp_filename = audio_name(16)
-    record.record_fixed_duration(temp_filename, duration=duration)
+    record.recognize_from_mic(temp_filename)
 
     recognized_result = record.file_recognize(temp_filename)
 
@@ -152,16 +153,16 @@ try:
 
             check_files()
 
-            lfu = listen_for_follow_up(duration=10)
+            lfu = listen_for_follow_up()
 
             while lfu[0]:
                 print("\n\n")
                 play_sound("done")
                 ask_and_speak(translate(text=lfu[1], flang="de", tlang="en"))
-                lfu = listen_for_follow_up(duration=10)
+                lfu = listen_for_follow_up()
 
             print("\nKein weiteres Gespräch erkannt.")
-            play_sound("no_conv")
+            # play_sound("no_conv") # this sound is annoying ash
 
 except KeyboardInterrupt:
     recoder.stop()

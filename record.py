@@ -25,7 +25,7 @@ def file_recognize(fn):
 
 def recognize_from_mic(fn):
     samplerate = 44100
-    min_duration = 2
+    min_duration = 1.5
     silence_threshold = 0.02
     silence_count = 0
     duration = 0
