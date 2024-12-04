@@ -1,4 +1,4 @@
-import pvporcupine, re, io, pyttsx3, record, random, string, os, time, ollama, tools, pvorca
+import pvporcupine, re, io, pyttsx3, record, random, string, os, time, ollama, tools
 from pvrecorder import PvRecorder
 from deep_translator import GoogleTranslator
 from gtts import gTTS
@@ -160,7 +160,8 @@ try:
                 ask_and_speak(translate(text=lfu[1], flang="de", tlang="en"))
                 lfu = listen_for_follow_up(duration=10)
 
-            print("Kein weiteres Gespräch erkannt.")
+            print("\nKein weiteres Gespräch erkannt.")
+            play_sound("no_conv")
 
 except KeyboardInterrupt:
     recoder.stop()
