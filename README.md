@@ -13,7 +13,8 @@ Blueberry ist ein sprachgesteuertes System, das Sprachbefehle erkennt, darauf re
 ## Geplant/in Entwicklung
 - Timer
 - Wetter
-- To-Do
+- To-Do Liste
+- AI unterbrechen (!)
 
 ## Installation
 1. Klone das Repository.
