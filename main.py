@@ -1,10 +1,15 @@
-import pvporcupine, re, io, pyttsx3, record, random, string, os, time, ollama, tools
+import pvporcupine, re, io, pyttsx3, record, random, string, os, time, ollama, tools, pvorca
 from pvrecorder import PvRecorder
 from deep_translator import GoogleTranslator
 from gtts import gTTS
 from espeakng import ESpeakNG
 import sounddevice as sd
 import soundfile as sf
+import numpy as np
+
+with open("credentials.yml", "r") as c:
+    lines = c.readlines()
+    access_key = lines[0].strip()
 
 def play_sound(fn:str):
     file_path = f"assets/{fn}.mp3"
@@ -95,10 +100,6 @@ def es_text_to_speech(text: str):
     tts.say(text)
 
 keywords = ["blueberry"]
-
-with open("credentials.yml", "r") as c:
-    lines = c.readlines()
-    access_key = lines[0].strip()
 
 def audio_name(length: int) -> str:
     return "".join([random.choice(string.ascii_lowercase) for i in range(length)])
