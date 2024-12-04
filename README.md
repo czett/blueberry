@@ -2,13 +2,13 @@
 
 # Blueberry
 
-Blueberry ist ein sprachgesteuertes System, das Sprachbefehle erkennt, darauf reagiert und Antworten generiert. Es nutzt Ollama und das Mistral-Modell für KI-basierte Antworten sowie Speech-to-Text für die Spracherkennung.
+Blueberry ist ein sprachgesteuertes System, das Sprachbefehle erkennt, darauf reagiert und Antworten generiert. Es nutzt Ollama und das llama3.2:1b-Modell für KI-basierte Antworten sowie Speech-to-Text für die Spracherkennung.
 
 ## Funktionen
 - Erkennung von Sprachbefehlen über Mikrofon
 - Ausgabe von Antworten mit Text-to-Speech
 - Verarbeitung von Folgeanfragen
-- KI-gestützte Antwortgenerierung mit **Ollama** und dem **Mistral-Modell**
+- KI-gestützte Antwortgenerierung mit **Ollama** und dem **llama3.2:1b-Modell**
 
 ## Installation
 1. Klone das Repository.
