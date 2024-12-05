@@ -28,7 +28,17 @@ def translate(text: str, flang: str, tlang: str) -> str:
 
 def ask_and_speak(prompt: str):
     try:
-        stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": prompt}], stream=True)
+        with open("prompt_config.txt", "r") as pc:
+            prompt_prefix = pc.read()
+
+        if "weather" in prompt.lower():
+            w = tools.weather()
+            print(w)
+            prompt = f"Formulate a short sentence with this exact information: currently the weather in Dortmund is {w[0]}°C and {w[1]}% probability of rain"
+        if "timer" in prompt.lower():
+            print("timer detected")
+            
+        stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
         buffer = ""
         combined_text = ""
 
@@ -142,14 +152,9 @@ try:
             text = record.file_recognize(command_file)[1]
             play_sound("done")
 
-            if "wetter" in text.lower():
-                w = tools.weather()
-                print(w)
-                ask_and_speak(f"Formulate a short sentence with this exact information: currently the weather in Dortmund is {w[0]}°C and {w[1]}% probability of rain")
-            else:
-                print("Verstandener Text: " + text)
-                en_text = translate(text=text, flang="de", tlang="en")
-                ask_and_speak(en_text)
+            print("Verstandener Text: " + text)
+            en_text = translate(text=text, flang="de", tlang="en")
+            ask_and_speak(en_text)
 
             check_files()
 
