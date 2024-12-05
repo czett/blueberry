@@ -10,6 +10,24 @@ import soundfile as sf
 import numpy as np
 import threading
 
+def process_sentence(sentence, temp_recorder, ran_str):
+    # Function for TTS and audio saving
+    text_to_speech(sentence)  # TTS (synchronous)
+    
+    # Recording and saving the audio
+    temp_audio = temp_recorder.get_audio()  # Get the recorded audio
+    temp_audio_fn = f"audio/{ran_str}.wav"
+    save_audio(temp_audio_fn, temp_audio, temp_recorder.samplerate)  # Save the audio
+
+    # Check for stop command after TTS and audio save
+    if "stop" in record.file_recognize(ran_str)[1].lower():
+        temp_recorder.stop()
+        play_sound("done")
+        # print("Stop command detected. Ending.")
+        return True  # Stop the process
+    
+    return False
+
 with open("credentials.yml", "r") as c:
     lines = c.readlines()
     access_key = lines[0].strip()
@@ -56,12 +74,11 @@ def ask_and_speak(prompt: str):
             print(w)
             prompt = f"Formulate a short sentence with this exact information: currently the weather in Dortmund is {w[0]}°C and {w[1]}% probability of rain"
         if "timer" in prompt.lower():
-            mod_prompt = prompt.lower() # for safety i guess :)
+            mod_prompt = prompt.lower()
             mod_prompt = mod_prompt.replace("timer to", "timer for")
-            mod_prompt = mod_prompt.split("timer for ")[1] # cut off instruction part (makes commands having to be precise)
-            mod_prompt = mod_prompt.replace(" and ", " ") # make usable for library (ily dear mister who coded it!)
-
-            tid = audio_name(16) # not an audio name but the timer id, who cares though
+            mod_prompt = mod_prompt.split("timer for ")[1]
+            mod_prompt = mod_prompt.replace(" and ", " ")
+            tid = audio_name(16)
             tools.add_timer(tid, parse(mod_prompt))
 
             prompt = f"You just created a timer for me (I asked for it) for this duration: {mod_prompt}. Quickly tell me that you completed my request. E. g.: {mod_prompt}, lets go!' Or so..."
@@ -89,19 +106,18 @@ def ask_and_speak(prompt: str):
             sentences = re.split(r'(?<!\d)(?<!\d[.])(?<!\w[.])([.!?:])(?=\s|\n|$)', buffer)
             for i in range(0, len(sentences) - 1, 2):
                 sentence = sentences[i] + sentences[i + 1]
-                text_to_speech(sentence)  # Sentence is spoken
+                text_to_speech(sentence)
                 buffer = buffer[len(sentence):]
 
-                # Move recording and stop recognition after TTS
-                temp_audio = temp_recorder.get_audio()  # Get the recorded audio
+                # After TTS, check for stop word
+                temp_audio = temp_recorder.get_audio()
                 temp_audio_fn = f"audio/{ran_str}.wav"
-                save_audio(temp_audio_fn, temp_audio, temp_recorder.samplerate)  # Save the audio
+                save_audio(temp_audio_fn, temp_audio, temp_recorder.samplerate)
 
-                # Check for "stop" after the sentence is spoken
+                # Check for the stop word immediately after the sentence is spoken
                 if "stop" in record.file_recognize(ran_str)[1].lower():
                     temp_recorder.stop()
-                    play_sound("done")
-                    return  # End method, break out
+                    return  # End method immediately after the stop word is detected
 
         # Process remaining buffer
         if buffer.strip():
@@ -115,6 +131,7 @@ def ask_and_speak(prompt: str):
         return combined_text
     except Exception as e:
         print(f"Error in ask_and_speak: {e}")
+
 
 def text_to_speech(text):
     text = translate(text.strip(), flang="en", tlang="de")
