@@ -3,6 +3,7 @@ from pvrecorder import PvRecorder
 from deep_translator import GoogleTranslator
 from gtts import gTTS
 from espeakng import ESpeakNG
+from pytimeparse import parse
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
@@ -27,6 +28,7 @@ def translate(text: str, flang: str, tlang: str) -> str:
     return GoogleTranslator(source=flang, target=tlang).translate(text)
 
 def ask_and_speak(prompt: str):
+    print(f"Prompt: {prompt}")
     try:
         with open("prompt_config.txt", "r") as pc:
             prompt_prefix = pc.read()
@@ -36,8 +38,15 @@ def ask_and_speak(prompt: str):
             print(w)
             prompt = f"Formulate a short sentence with this exact information: currently the weather in Dortmund is {w[0]}°C and {w[1]}% probability of rain"
         if "timer" in prompt.lower():
-            print("timer detected")
+            mod_prompt = prompt.lower() # for safety i guess :)
+            mod_prompt = mod_prompt.split("timer for ")[1] # cut off instruction part (makes commands having to be precise)
+            mod_prompt = mod_prompt.replace(" and ", " ") # make usable for library (ily dear mister who coded it!)
             
+            tid = audio_name(16) # not an audio name but the timer id, who cares though
+            tools.add_timer(tid, parse(mod_prompt))
+
+            prompt = f"You just created a timer for me (I asked for it) for this duration: {mod_prompt}. Quickly tell me that you completed my request. E. g.: {mod_prompt}, lets go!' Or so..."
+
         stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
         buffer = ""
         combined_text = ""
