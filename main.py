@@ -8,6 +8,7 @@ from pytimeparse import parse
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
+import threading
 
 with open("credentials.yml", "r") as c:
     lines = c.readlines()
@@ -88,14 +89,15 @@ def ask_and_speak(prompt: str):
             sentences = re.split(r'(?<!\d)(?<!\d[.])(?<!\w[.])([.!?:])(?=\s|\n|$)', buffer)
             for i in range(0, len(sentences) - 1, 2):
                 sentence = sentences[i] + sentences[i + 1]
-                text_to_speech(sentence)
+                text_to_speech(sentence)  # Sentence is spoken
                 buffer = buffer[len(sentence):]
 
-                # After TTS, check for stop word
-                temp_audio = temp_recorder.get_audio()
+                # Move recording and stop recognition after TTS
+                temp_audio = temp_recorder.get_audio()  # Get the recorded audio
                 temp_audio_fn = f"audio/{ran_str}.wav"
-                save_audio(temp_audio_fn, temp_audio, temp_recorder.samplerate)
+                save_audio(temp_audio_fn, temp_audio, temp_recorder.samplerate)  # Save the audio
 
+                # Check for "stop" after the sentence is spoken
                 if "stop" in record.file_recognize(ran_str)[1].lower():
                     temp_recorder.stop()
                     play_sound("done")
