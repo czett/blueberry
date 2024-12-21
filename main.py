@@ -68,9 +68,9 @@ def ask_and_speak(prompt: str):
         stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
         buffer = ""
         combined_text = ""
-        temp_recorder = record.AudioRecorder()
-        temp_recorder.start()
-        print("rec started")
+        #temp_recorder = record.AudioRecorder()
+        #temp_recorder.start()
+        #print("rec started")
 
         ran_str = audio_name(16)
 
@@ -90,31 +90,31 @@ def ask_and_speak(prompt: str):
             for i in range(0, len(sentences) - 1, 2):
                 sentence = sentences[i] + sentences[i + 1]
                 text_to_speech(sentence)  # Sentence is spoken
-                print("tts done")
+                #print("tts done")
                 buffer = buffer[len(sentence):]
 
                 # Move recording and stop recognition after TTS
-                temp_audio = temp_recorder.get_audio()  # Get the recorded audio
-                print("audio fetched")
-                temp_audio_fn = f"audio/{ran_str}.wav"
-                save_audio(temp_audio_fn, temp_audio, temp_recorder.samplerate)  # Save the audio
-                print("audio saved")
+                #temp_audio = temp_recorder.get_audio()  # Get the recorded audio
+                #print("audio fetched")
+                #temp_audio_fn = f"audio/{ran_str}.wav"
+                #save_audio(temp_audio_fn, temp_audio, temp_recorder.samplerate)  # Save the audio
+                #print("audio saved")
                 # Check for "stop" after the sentence is spoken
-                temp_stt = record.file_recognize(ran_str)[1].lower()
-                print("stt done")
-                if "stop" in temp_stt:
-                    temp_recorder.stop()
-                    play_sound("done")
-                    return  # End method, break out
+                #temp_stt = record.file_recognize(ran_str)[1].lower()
+                #print("stt done")
+                #if "stop" in temp_stt:
+                #    temp_recorder.stop()
+                #    play_sound("done")
+                #    return  # End method, break out
 
         # Process remaining buffer
         if buffer.strip():
             translated_buffer = translate(buffer.strip(), flang="en", tlang="de")
             text_to_speech(translated_buffer)
 
-        temp_recorder.stop()
-        final_audio_fn = f"audio/{ran_str}_final.wav"
-        save_audio(final_audio_fn, temp_recorder.get_audio(), temp_recorder.samplerate)
+        #temp_recorder.stop()
+        #final_audio_fn = f"audio/{ran_str}_final.wav"
+        #save_audio(final_audio_fn, temp_recorder.get_audio(), temp_recorder.samplerate)
 
         return combined_text
     except Exception as e:
