@@ -136,15 +136,15 @@ def pyttsx3_text_to_speech(text: str):
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
 
-    for voice in voices:
-        print(f"Voice: {voice.name}, ID: {voice.id}, Languages: {voice.languages}")
+    #for voice in voices:
+    #    print(f"Voice: {voice.name}, ID: {voice.id}, Languages: {voice.languages}")
 
     for voice in voices:
         if "de" in voice.languages:
             engine.setProperty('voice', voice.id)
             break
 
-    engine.setProperty('rate', 300)
+    engine.setProperty('rate', 200)
     engine.setProperty('volume', 1.0)
 
     engine.say(text)
@@ -193,6 +193,7 @@ try:
 
     while True:
         keyword_index = porcupine.process(recoder.read())
+        check_timers()
         if keyword_index >= 0:
             play_sound("startup")
             command_file = listen_for_command()
