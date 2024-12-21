@@ -23,4 +23,4 @@ Blueberry ist ein sprachgesteuertes System, das Sprachbefehle erkennt, darauf re
 4. Stelle sicher, dass die Zugangsdaten in der Datei `credentials.yml` vorhanden sind.
 
 ## Nutzung
-Starte das Skript und sprich nach dem Startsound Befehle, auf die Blueberry reagiert. Das System nutzt das Mistral-Modell über Ollama, um Antworten zu generieren.
+Starte das Skript und sprich nach dem Startsound Befehle, auf die Blueberry reagiert. Das System nutzt das llama3.2:1b-Modell über Ollama, um Antworten zu generieren.
