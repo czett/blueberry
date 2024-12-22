@@ -1,5 +1,6 @@
 import asyncio
 import edge_tts
+import speech_recognition as sr
 import pygame
 
 # All German voices
@@ -21,4 +22,4 @@ async def tts(text) -> None:
         await communicator.save(f"tests/{voice}.mp3")
     play_mp3_with_pygame(voice)
 
-asyncio.run(tts("hewwo"))
+# asyncio.run(tts("hewwo"))
