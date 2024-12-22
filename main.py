@@ -8,6 +8,11 @@ from pytimeparse import parse
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
+import asyncio
+import edge_tts
+import pygame
+
+VOICE = "de-DE-ConradNeural"
 
 with open("credentials.yml", "r") as c:
     lines = c.readlines()
@@ -44,6 +49,23 @@ def check_timers():
         for i in range(4):
             play_sound("timer")
 
+def play_mp3_with_pygame(mp3_file):
+    mp3_file = f"audio/{mp3_file}.mp3"
+    pygame.mixer.init()
+    pygame.mixer.music.load(mp3_file)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        pygame.time.Clock().tick(10)
+
+async def tts(text) -> None:
+    text = translate(text.strip(), flang="en", tlang="de")
+    VOICES = ["de-DE-ConradNeural"]
+    for voice in VOICES:
+        communicator = edge_tts.Communicate(text, voice)
+        name = audio_name(16)
+        await communicator.save(f"audio/{name}.mp3")
+    play_mp3_with_pygame(name)
+
 def ask_and_speak(prompt: str):
     print(f"Prompt: {prompt}")
     try:
@@ -68,9 +90,6 @@ def ask_and_speak(prompt: str):
         stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
         buffer = ""
         combined_text = ""
-        #temp_recorder = record.AudioRecorder()
-        #temp_recorder.start()
-        #print("rec started")
 
         ran_str = audio_name(16)
 
@@ -89,32 +108,14 @@ def ask_and_speak(prompt: str):
             sentences = re.split(r'(?<!\d)(?<!\d[.])(?<!\w[.])([.!?:])(?=\s|\n|$)', buffer)
             for i in range(0, len(sentences) - 1, 2):
                 sentence = sentences[i] + sentences[i + 1]
-                text_to_speech(sentence)  # Sentence is spoken
+                asyncio.run(tts(sentence))  # Sentence is spoken
                 #print("tts done")
                 buffer = buffer[len(sentence):]
-
-                # Move recording and stop recognition after TTS
-                #temp_audio = temp_recorder.get_audio()  # Get the recorded audio
-                #print("audio fetched")
-                #temp_audio_fn = f"audio/{ran_str}.wav"
-                #save_audio(temp_audio_fn, temp_audio, temp_recorder.samplerate)  # Save the audio
-                #print("audio saved")
-                # Check for "stop" after the sentence is spoken
-                #temp_stt = record.file_recognize(ran_str)[1].lower()
-                #print("stt done")
-                #if "stop" in temp_stt:
-                #    temp_recorder.stop()
-                #    play_sound("done")
-                #    return  # End method, break out
 
         # Process remaining buffer
         if buffer.strip():
             translated_buffer = translate(buffer.strip(), flang="en", tlang="de")
             text_to_speech(translated_buffer)
-
-        #temp_recorder.stop()
-        #final_audio_fn = f"audio/{ran_str}_final.wav"
-        #save_audio(final_audio_fn, temp_recorder.get_audio(), temp_recorder.samplerate)
 
         return combined_text
     except Exception as e:
