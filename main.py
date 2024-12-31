@@ -11,6 +11,7 @@ import numpy as np
 import asyncio
 import edge_tts
 import pygame
+import json
 
 VOICE = "de-DE-ConradNeural"
 
@@ -32,8 +33,6 @@ def listen_for_command():
     return name
     
 def save_audio(filename, audio_data, samplerate):
-    """Save audio data as a WAV file."""
-    # Convert to 16-bit PCM if not already
     audio_data = (audio_data * 32767).astype(np.int16)  # Scale float32 data to int16
     with wave.open(filename, 'wb') as wav_file:
         wav_file.setnchannels(1)  # Mono
@@ -69,13 +68,24 @@ async def tts(text) -> None:
 def ask_and_speak(prompt: str):
     print(f"Prompt: {prompt}")
     try:
-        with open("prompt_config.txt", "r") as pc:
-            prompt_prefix = pc.read()
+        with open("prompt_config.json", "r") as pc:
+            prefixes = json.load(pc)
+            prompt_prefix = prefixes["weather"]
 
         if "weather" in prompt.lower():
             w = tools.weather()
             print(w)
-            prompt = f"Formulate a short sentence with this exact information: currently the weather in Dortmund is {w[0]}°C and {w[1]}% probability of rain"
+
+            prompt = ""
+            prompt_prefix = prefixes["weather"]
+            prompt_data = {"_TEMP": w[0], "_RAIN": w[1]}
+            
+            print(prompt_prefix)
+            for key, value in prompt_data.items():
+                prompt_prefix = prompt_prefix.replace(key, str(value))
+                print(key, value)
+
+
         if "timer" in prompt.lower():
             mod_prompt = prompt.lower() # for safety i guess :)
             mod_prompt = mod_prompt.replace("timer to", "timer for")
@@ -85,13 +95,18 @@ def ask_and_speak(prompt: str):
             tid = audio_name(16) # not an audio name but the timer id, who cares though
             tools.add_timer(tid, parse(mod_prompt))
 
-            prompt = f"You just created a timer for me (I asked for it) for this duration: {mod_prompt}. Quickly tell me that you completed my request. E. g.: {mod_prompt}, lets go!' Or so..."
+            prompt = ""
+            prompt_prefix = prefixes["timer"]
+            prompt_data = {"_DUR": mod_prompt}
+
+            for key, value in prompt_data.items():
+                prompt_prefix = prompt_prefix.replace(key, str(value))
 
         stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
         buffer = ""
         combined_text = ""
 
-        ran_str = audio_name(16)
+        # ran_str = audio_name(16)
 
         for chunk in stream:
             if chunk is None or "message" not in chunk or "content" not in chunk["message"]:
@@ -136,9 +151,6 @@ def text_to_speech(text):
 def pyttsx3_text_to_speech(text: str):
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
-
-    #for voice in voices:
-    #    print(f"Voice: {voice.name}, ID: {voice.id}, Languages: {voice.languages}")
 
     for voice in voices:
         if "de" in voice.languages:
@@ -196,7 +208,7 @@ try:
         keyword_index = porcupine.process(recoder.read())
         check_timers()
         if keyword_index >= 0:
-            play_sound("startup")
+            #play_sound("startup")
             command_file = listen_for_command()
             text = record.file_recognize(command_file)[1]
             play_sound("done")
