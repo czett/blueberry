@@ -8,6 +8,7 @@ Blueberry ist ein sprachgesteuertes System, das Sprachbefehle erkennt, darauf re
 - Erkennung von Sprachbefehlen über Mikrofon
 - Ausgabe von Antworten mit Text-to-Speech
 - Verarbeitung von Folgeanfragen
+- aktuelles Wetter ohne genaue Filter (Temperatur und Regenwahrscheinlichkeit)
 - Timer stellen und deren Klingelton (klingeln im Ruhezustand und in aktueller Ausgabe)
 - KI-gestützte Antwortgenerierung mit **Ollama** und dem **llama3.2:1b-Modell**
 
