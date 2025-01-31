@@ -12,8 +12,11 @@ import asyncio
 import edge_tts
 import pygame
 import json
+import sys
 
 VOICE = "de-DE-ConradNeural"
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 with open("credentials.yml", "r") as c:
     lines = c.readlines()
@@ -66,11 +69,11 @@ async def tts(text) -> None:
     play_mp3_with_pygame(name)
 
 def ask_and_speak(prompt: str):
-    print(f"Prompt: {prompt}")
+    print(f"Prompt: {prompt.lower()}")
     try:
         with open("prompt_config.json", "r") as pc:
             prefixes = json.load(pc)
-            prompt_prefix = prefixes["weather"]
+            prompt_prefix = prefixes["standard"]
 
         if "weather" in prompt.lower():
             w = tools.weather()
@@ -102,9 +105,11 @@ def ask_and_speak(prompt: str):
             for key, value in prompt_data.items():
                 prompt_prefix = prompt_prefix.replace(key, str(value))
 
+        # stream = ollama.chat(model="deepseek-r1:1.5b", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
         stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
         buffer = ""
         combined_text = ""
+        thinks = False
 
         # ran_str = audio_name(16)
 
@@ -123,14 +128,20 @@ def ask_and_speak(prompt: str):
             sentences = re.split(r'(?<!\d)(?<!\d[.])(?<!\w[.])([.!?:])(?=\s|\n|$)', buffer)
             for i in range(0, len(sentences) - 1, 2):
                 sentence = sentences[i] + sentences[i + 1]
-                asyncio.run(tts(sentence))  # Sentence is spoken
-                #print("tts done")
+
+                if not thinks:
+                    #text_to_speech(sentence)
+                    asyncio.run(tts(sentence))  # Sentence is spoken
+                    #print("tts done")
                 buffer = buffer[len(sentence):]
+                
+                if "</think>" in sentence:
+                    thinks = False
 
         # Process remaining buffer
         if buffer.strip():
             translated_buffer = translate(buffer.strip(), flang="en", tlang="de")
-            text_to_speech(translated_buffer)
+            asyncio.run(tts(translated_buffer))
 
         return combined_text
     except Exception as e:
@@ -196,6 +207,8 @@ def listen_for_follow_up() -> bool:
 
     recognized_result = record.file_recognize(temp_filename)
 
+    # return recognized_result
+
     if recognized_result[0]: # if new text recognized
         return (True, recognized_result[1])
     
@@ -208,12 +221,13 @@ try:
         keyword_index = porcupine.process(recoder.read())
         check_timers()
         if keyword_index >= 0:
-            #play_sound("startup")
+            play_sound("startup")
             command_file = listen_for_command()
             text = record.file_recognize(command_file)[1]
             play_sound("done")
 
             print("Verstandener Text: " + text)
+            
             en_text = translate(text=text, flang="de", tlang="en")
             ask_and_speak(en_text)
 
@@ -224,6 +238,7 @@ try:
             while lfu[0]:
                 print("\n\n")
                 play_sound("done")
+                check_files()
                 ask_and_speak(translate(text=lfu[1], flang="de", tlang="en"))
                 lfu = listen_for_follow_up()
 
