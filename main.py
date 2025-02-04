@@ -1,9 +1,10 @@
-import pvporcupine, re, io, pyttsx3, wave, record, random, string, os, time, ollama, tools
+import pvporcupine, re, io, wave, record, random, string, os, time, ollama, tools
 from pvrecorder import PvRecorder
 from deep_translator import GoogleTranslator
-from gtts import gTTS
-from espeakng import ESpeakNG
-import scipy.io.wavfile as wav
+#from gtts import gTTS
+#from espeakng import ESpeakNG
+#import pyttsx3
+#import scipy.io.wavfile as wav
 from pytimeparse import parse
 import sounddevice as sd
 import soundfile as sf
@@ -14,6 +15,7 @@ import pygame
 import json
 import sys
 
+pygame.mixer.init()
 VOICE = "de-DE-ConradNeural"
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -66,6 +68,7 @@ async def tts(text) -> None:
         communicator = edge_tts.Communicate(text, voice)
         name = audio_name(16)
         await communicator.save(f"audio/{name}.mp3")
+    time.sleep(0.5)
     play_mp3_with_pygame(name)
 
 def ask_and_speak(prompt: str):
@@ -147,39 +150,39 @@ def ask_and_speak(prompt: str):
     except Exception as e:
         print(f"Error in ask_and_speak: {e}")
 
-def text_to_speech(text):
-    text = translate(text.strip(), flang="en", tlang="de")
+#def text_to_speech(text):
+#    text = translate(text.strip(), flang="en", tlang="de")
 
-    tts = gTTS(text=text, lang="de")
-    audio_buffer = io.BytesIO()
-    tts.write_to_fp(audio_buffer)
-    audio_buffer.seek(0)
+#    tts = gTTS(text=text, lang="de")
+#    audio_buffer = io.BytesIO()
+#    tts.write_to_fp(audio_buffer)
+#    audio_buffer.seek(0)
 
-    data, samplerate = sf.read(audio_buffer, dtype="float32")
-    sd.play(data, samplerate)
-    sd.wait()
+#    data, samplerate = sf.read(audio_buffer, dtype="float32")
+#    sd.play(data, samplerate)
+#    sd.wait()
 
-def pyttsx3_text_to_speech(text: str):
-    engine = pyttsx3.init()
-    voices = engine.getProperty('voices')
+#def pyttsx3_text_to_speech(text: str):
+#    engine = pyttsx3.init()
+#    voices = engine.getProperty('voices')
 
-    for voice in voices:
-        if "de" in voice.languages:
-            engine.setProperty('voice', voice.id)
-            break
+#    for voice in voices:
+#        if "de" in voice.languages:
+#            engine.setProperty('voice', voice.id)
+#            break
 
-    engine.setProperty('rate', 200)
-    engine.setProperty('volume', 1.0)
+#    engine.setProperty('rate', 200)
+#    engine.setProperty('volume', 1.0)
 
-    engine.say(text)
-    engine.runAndWait()
+#    engine.say(text)
+#    engine.runAndWait()
 
-def es_text_to_speech(text: str):
-    tts = ESpeakNG()
-    tts.voice = "de"
-    tts.speed = 150
-    tts.volume = 100
-    tts.say(text)
+#def es_text_to_speech(text: str):
+#    tts = ESpeakNG()
+#    tts.voice = "de"
+#    tts.speed = 150
+#    tts.volume = 100
+#    tts.say(text)
 
 keywords = ["blueberry"]
 
