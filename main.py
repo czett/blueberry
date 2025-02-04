@@ -6,6 +6,7 @@ from deep_translator import GoogleTranslator
 #import pyttsx3
 #import scipy.io.wavfile as wav
 from pytimeparse import parse
+from pydub import AudioSegment
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
