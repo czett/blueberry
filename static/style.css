@@ -158,3 +158,32 @@ body{
     font-size: 1.3rem;
     font-weight: 700;
 }
+
+@media (width < 1000px){
+    :root{
+        --rlpad: 2vw;
+    }
+
+    .nodge{
+        height: 10vh;
+    }
+
+    .nodge button{
+        aspect-ratio: 1;
+        font-size: 1.1rem;
+    }
+
+    .nodge input{
+        width: 70%;
+        font-style: 1rem;
+    }
+
+    .nodge img{
+        height: 80%;
+    }
+
+    .answer div, .prompt div{
+        padding: 1.5vh 2vh !important;
+        max-width: 80% !important;
+    }
+}
