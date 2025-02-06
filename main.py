@@ -41,7 +41,7 @@ def listen_for_command():
 def save_audio(filename, audio_data, samplerate):
     audio_data = (audio_data * 32767).astype(np.int16)  # Scale float32 data to int16
     with wave.open(filename, 'wb') as wav_file:
-        wav_file.setnchannels(1) 
+        wav_file.setnchannels(1)  # Mono
         wav_file.setsampwidth(2)  # 2 bytes for 16-bit samples
         wav_file.setframerate(samplerate)
         wav_file.writeframes(audio_data.tobytes())
