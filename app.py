@@ -20,7 +20,6 @@ def answer():
                 yield chunk["message"]["content"]
 
     return generate(), {"Content-Type": "text/plain"}
-    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5500)
