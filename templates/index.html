@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>blueberry chat</title>
+    <link rel="shortcut icon" href="{{url_for('static', filename='colored_blueberry.png')}}" type="image/x-icon">
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+    <!-- <script src="chat.js"></script> -->
+</head>
+<body>
+    <a href="https://github.com/czett/blueberry" target="_blank">
+        <div class="logo">
+            <img src="{{url_for('static', filename='blueberry.png')}}" alt="vorp">
+            <div>blueberry</div>
+        </div>
+    </a>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <form action="/answer" enctype="multipart/form-data" method="post" class="nodge">
+        <img src="{{url_for('static', filename='colored_blueberry.png')}}" alt="vorp">
+        <input type="text" spellcheck="false">
+        <button type="submit">go</button>
+    </form>
+
+    <div class="chat">
+        <!-- <div class="overlay"></div> -->
+        <div class="prompt">
+            <!-- <div class="p0"></div> -->
+        </div>
+        <div class="answer">
+            <!-- <div class="a0"></div> -->
+        </div>
+    </div>
+
+    <script>
+        const submitBtn = document.querySelector('button');
+        const input = document.querySelector('input');
+
+        let msgCount = 0;
+        
+        function intToString(num) {
+            return num.toString();
+        }
+        
+        submitBtn.addEventListener('click', async(e) => {
+            e.preventDefault();
+            input.disabled = true;
+            
+            let prompt = "p" + intToString(msgCount);
+            let answer = "a" + intToString(msgCount);
+
+            // create next obj for prompt and answer
+            const newPrompt = document.createElement('div');
+            newPrompt.className = "prompt";
+            const newPromptContent = document.createElement('div');
+            newPromptContent.className = "p" + intToString(msgCount);
+            newPrompt.appendChild(newPromptContent);
+            document.querySelector('.chat').appendChild(newPrompt);
+
+            const newAnswer = document.createElement('div');
+            newAnswer.className = "answer";
+            const newAnswerContent = document.createElement('div');
+            newAnswerContent.className = "a" + intToString(msgCount);
+            newAnswer.appendChild(newAnswerContent);
+            document.querySelector('.chat').appendChild(newAnswer);
+
+            document.querySelector("." + prompt).innerHTML = input.value;
+            const inp_prompt = input.value;
+            input.value = "";
+            
+            const response = await fetch('/answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({message: inp_prompt})
+            });
+            
+            const reader = response.body.getReader();
+            let output = "";
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                
+                if (done) {
+                    break;
+                }
+                
+                output += new TextDecoder().decode(value);
+                document.querySelector("." + answer).innerHTML = "<p>" + marked.parse(output) + "</p>";
+                document.querySelector('.chat').scrollTop = document.querySelector('.chat').scrollHeight;
+            }
+            
+            input.disabled = false;
+            input.focus();
+            msgCount++;
+        });
+    </script>
+</body>
+</html>

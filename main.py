@@ -247,7 +247,6 @@ try:
                 lfu = listen_for_follow_up()
 
             print("\nKein weiteres Gespräch erkannt.")
-            # play_sound("no_conv") # this sound is annoying ash
 
 except KeyboardInterrupt:
     recoder.stop()

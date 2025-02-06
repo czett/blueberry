@@ -1,4 +1,4 @@
-![banner where?](https://github.com/czett/blueberry/blob/main/assets/banner.png)
+![banner where?](https://github.com/czett/blueberry/blob/main/assets/banner2.png)
 
 # Blueberry
 
