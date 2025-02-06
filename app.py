@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, session
 import ollama, json
+from deep_translator import GoogleTranslator
 
 with open("prompt_config.json", "r") as pc:
     prefixes = json.load(pc)
@@ -8,6 +9,8 @@ with open("prompt_config.json", "r") as pc:
 app = Flask(__name__)
 app.secret_key = "wefhwoeifhaoeiurhgqoeirgh"
 
+def translate(text: str, flang: str, tlang: str) -> str:
+    return GoogleTranslator(source=flang, target=tlang).translate(text)
 
 @app.route('/')
 def index():

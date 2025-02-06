@@ -19,7 +19,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <form action="/answer" enctype="multipart/form-data" method="post" class="nodge">
         <img src="{{url_for('static', filename='colored_blueberry.png')}}" alt="vorp">
-        <input type="text">
+        <input type="text" spellcheck="false">
         <button type="submit">go</button>
     </form>
 
@@ -45,6 +45,7 @@
         
         submitBtn.addEventListener('click', async(e) => {
             e.preventDefault();
+            input.disabled = true;
             
             let prompt = "p" + intToString(msgCount);
             let answer = "a" + intToString(msgCount);
@@ -91,6 +92,8 @@
                 document.querySelector('.chat').scrollTop = document.querySelector('.chat').scrollHeight;
             }
             
+            input.disabled = false;
+            input.focus();
             msgCount++;
         });
     </script>
