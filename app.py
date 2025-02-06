@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, session
 import ollama, json
-from deep_translator import GoogleTranslator
 
 with open("prompt_config.json", "r") as pc:
     prefixes = json.load(pc)
@@ -8,31 +7,44 @@ with open("prompt_config.json", "r") as pc:
 
 app = Flask(__name__)
 app.secret_key = "wefhwoeifhaoeiurhgqoeirgh"
-
-def translate(text: str, flang: str, tlang: str) -> str:
-    return GoogleTranslator(source=flang, target=tlang).translate(text)
+app.config['SESSION_PERMANENT'] = False
 
 @app.route('/')
 def index():
-    session["count"] = 0
+    session.clear()  # Reset session completely
     return render_template('index.html')
 
-@app.route('/answer', methods=["POST", "GET"])
+@app.route('/answer', methods=["POST"])
 def answer():
     data = request.get_json()
-    message = prompt_prefix + data['message']
-    if session["count"] > 1:
-        message = data['message']
-    session["count"] += 1
+    user_message = data['message']
 
+    # Ensure session["messages"] exists
+    if "messages" not in session:
+        session["messages"] = []
+
+    # Add user message to conversation history
+    session["messages"].append({"role": "user", "content": user_message})
+
+    # Copy the conversation history for the model (Flask session is a dict-like object)
+    messages_copy = list(session["messages"])
+
+    # Get model response **before** streaming
+    assistant_response = ""
+    for chunk in ollama.chat(model="qwen2.5:3b", messages=messages_copy, stream=True):
+        if chunk["message"]["content"]:
+            assistant_response += chunk["message"]["content"]
+
+    # Store assistant response in session **before** streaming starts
+    session["messages"].append({"role": "assistant", "content": assistant_response})
+    session.modified = True  # Ensure session updates persist
+
+    # Now return the response as a generator
     def generate():
-        stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": message}], stream=True)
-        
-        for chunk in stream:
-            if chunk["message"]["content"] is not None:
-                yield chunk["message"]["content"]
+        for char in assistant_response:
+            yield char
 
-    return generate(), {"Content-Type": "text/plain"}
+    return app.response_class(generate(), content_type="text/plain")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5500, host='0.0.0.0')
