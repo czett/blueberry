@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, Response
 import ollama, json
 
 with open("prompt_config.json", "r") as pc:
@@ -29,22 +29,19 @@ def answer():
     # Copy the conversation history for the model (Flask session is a dict-like object)
     messages_copy = list(session["messages"])
 
-    # Get model response **before** streaming
-    assistant_response = ""
-    for chunk in ollama.chat(model="qwen2.5:3b", messages=messages_copy, stream=True):
-        if chunk["message"]["content"]:
-            assistant_response += chunk["message"]["content"]
-
-    # Store assistant response in session **before** streaming starts
-    session["messages"].append({"role": "assistant", "content": assistant_response})
-    session.modified = True  # Ensure session updates persist
-
     # Now return the response as a generator
     def generate():
-        for char in assistant_response:
-            yield char
+        assistant_response = ""
+        for chunk in ollama.chat(model="qwen2.5:3b", messages=messages_copy, stream=True):
+            if chunk["message"]["content"]:
+                assistant_response += chunk["message"]["content"]
+                yield chunk["message"]["content"]
+        
+        # Store assistant response in session after streaming
+        session["messages"].append({"role": "assistant", "content": assistant_response})
+        session.modified = True  # Ensure session updates persist
 
-    return app.response_class(generate(), content_type="text/plain")
+    return Response(generate(), content_type="text/plain")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5500, host='0.0.0.0')
