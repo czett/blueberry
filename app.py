@@ -11,7 +11,7 @@ app.config['SESSION_PERMANENT'] = False
 
 @app.route('/')
 def index():
-    session.clear()  # Reset session completely
+    session.clear()
     return render_template('index.html')
 
 @app.route('/answer', methods=["POST"])
@@ -19,28 +19,32 @@ def answer():
     data = request.get_json()
     user_message = data['message']
 
-    # Ensure session["messages"] exists
     if "messages" not in session:
         session["messages"] = []
 
-    # Add user message to conversation history
     session["messages"].append({"role": "user", "content": user_message})
 
-    # Copy the conversation history for the model (Flask session is a dict-like object)
     messages_copy = list(session["messages"])
 
-    # Now return the response as a generator
+    global assistant_response
+    assistant_response = ""
+
+    # stupid a$$ github copilot couldnt figure out how to do this (history and realtime)
+    # turns out even I am smart enough to do ts
+    # it even suggests these comments to mob itself wth
+
     def generate():
-        assistant_response = ""
+        global assistant_response
         for chunk in ollama.chat(model="qwen2.5:3b", messages=messages_copy, stream=True):
             if chunk["message"]["content"]:
+                #print(chunk["message"]["content"])
                 assistant_response += chunk["message"]["content"]
                 yield chunk["message"]["content"]
         
-        # Store assistant response in session after streaming
-        session["messages"].append({"role": "assistant", "content": assistant_response})
-        session.modified = True  # Ensure session updates persist
-
+    session["messages"].append({"role": "assistant", "content": assistant_response})
+    session.modified = True
+    
+    #print(assistant_response)
     return Response(generate(), content_type="text/plain")
 
 if __name__ == '__main__':
