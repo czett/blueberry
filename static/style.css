@@ -145,6 +145,7 @@ body{
     padding-bottom: 2vh;
     box-sizing: border-box;
     user-select: none;
+    filter: brightness(1.5) sepia(0.5); /* stupid workaround because i made the logo b/w hahaha */
 }
 
 .logo img{
