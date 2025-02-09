@@ -116,7 +116,7 @@ body{
     float: right;
     background: var(--bg3);
     padding: 1vh;
-    border-radius: var(--lbrad);
+    border-radius: var(--lbrad) var(--lbrad) calc(0.15 * var(--lbrad)) var(--lbrad);
     font-size: 1.1rem;
     line-height: 120%;
 }
