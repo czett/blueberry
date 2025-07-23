@@ -23,7 +23,6 @@ def answer():
         session["messages"] = []
 
     session["messages"].append({"role": "user", "content": user_message})
-
     messages_copy = list(session["messages"])
 
     global assistant_response
@@ -37,12 +36,16 @@ def answer():
         global assistant_response
         for chunk in ollama.chat(model="qwen2.5:3b", messages=messages_copy, stream=True):
             if chunk["message"]["content"]:
-                #print(chunk["message"]["content"])
                 assistant_response += chunk["message"]["content"]
                 yield chunk["message"]["content"]
-        
+
     session["messages"].append({"role": "assistant", "content": assistant_response})
     session.modified = True
+
+    # store messages locally, i can extend it to multiple chats later on then
+    # with open("chat_sessions/session_1.json", "w") as f:
+    #     data = {"messages": session["messages"]}
+    #     json.dump(data, f)
     
     #print(assistant_response)
     return Response(generate(), content_type="text/plain")

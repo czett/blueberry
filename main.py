@@ -46,8 +46,14 @@ def save_audio(filename, audio_data, samplerate):
         wav_file.setframerate(samplerate)
         wav_file.writeframes(audio_data.tobytes())
 
+# def translate(text: str, flang: str, tlang: str) -> str:
+#     return GoogleTranslator(source=flang, target=tlang).translate(text)
+
+from translate import Translator
+
 def translate(text: str, flang: str, tlang: str) -> str:
-    return GoogleTranslator(source=flang, target=tlang).translate(text)
+    translator = Translator(from_lang=flang, to_lang=tlang)
+    return translator.translate(text)
 
 def check_timers():
     if len(tools.check_timers()) > 0:
@@ -62,11 +68,26 @@ def play_mp3_with_pygame(mp3_file):
     while pygame.mixer.music.get_busy():
         pygame.time.Clock().tick(10)
 
-async def tts(text) -> None:
+# async def tts(text) -> None:
+#     text = translate(text.strip(), flang="en", tlang="de")
+#     VOICES = ["de-DE-ConradNeural"]
+#     for voice in VOICES:
+#         communicator = edge_tts.Communicate(text, voice)
+#         name = audio_name(16)
+#         await communicator.save(f"audio/{name}.mp3")
+#     time.sleep(0.5)
+#     play_mp3_with_pygame(name)
+
+async def tts(text, rate='+0%', volume='+0%') -> None:
     text = translate(text.strip(), flang="en", tlang="de")
     VOICES = ["de-DE-ConradNeural"]
     for voice in VOICES:
-        communicator = edge_tts.Communicate(text, voice)
+        communicator = edge_tts.Communicate(
+            text, 
+            voice, 
+            rate=rate,    # Geschwindigkeit anpassen
+            volume=volume # Lautstärke anpassen
+        )
         name = audio_name(16)
         await communicator.save(f"audio/{name}.mp3")
     time.sleep(0.5)

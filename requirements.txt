@@ -7,3 +7,4 @@ sounddevice
 soundfile
 ollama
 translators
+deepl
