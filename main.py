@@ -1,4 +1,4 @@
-import pvporcupine, re, io, wave, record, random, string, os, time, ollama, tools
+import pvporcupine, re, io, wave, record_old, random, string, os, time, ollama, tools
 from pvrecorder import PvRecorder
 from deep_translator import GoogleTranslator
 #from gtts import gTTS
@@ -17,7 +17,8 @@ import json
 import sys
 
 pygame.mixer.init()
-VOICE = "de-DE-ConradNeural"
+chat_history = []
+
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -34,8 +35,8 @@ def play_sound(fn:str, wait=True):
 
 def listen_for_command():
     name = audio_name(16)
-    record.recognize_from_mic(name)
-    play_sound("done")
+    record_old.recognize_from_mic(name)
+    # play_sound("done")
     return name
     
 def save_audio(filename, audio_data, samplerate):
@@ -67,6 +68,7 @@ def play_mp3_with_pygame(mp3_file):
     pygame.mixer.music.play()
     while pygame.mixer.music.get_busy():
         pygame.time.Clock().tick(10)
+    pygame.mixer.music.stop()
 
 # async def tts(text) -> None:
 #     text = translate(text.strip(), flang="en", tlang="de")
@@ -80,7 +82,7 @@ def play_mp3_with_pygame(mp3_file):
 
 async def tts(text, rate='+0%', volume='+0%') -> None:
     text = translate(text.strip(), flang="en", tlang="de")
-    VOICES = ["de-DE-ConradNeural"]
+    VOICES = ["de-DE-KillianNeural"]
     for voice in VOICES:
         communicator = edge_tts.Communicate(
             text, 
@@ -95,6 +97,7 @@ async def tts(text, rate='+0%', volume='+0%') -> None:
 
 def ask_and_speak(prompt: str):
     print(f"Prompt: {prompt.lower()}")
+
     try:
         with open("prompt_config.json", "r") as pc:
             prefixes = json.load(pc)
@@ -113,7 +116,6 @@ def ask_and_speak(prompt: str):
                 prompt_prefix = prompt_prefix.replace(key, str(value))
                 print(key, value)
 
-
         if "timer" in prompt.lower():
             mod_prompt = prompt.lower() # for safety i guess :)
             mod_prompt = mod_prompt.replace("timer to", "timer for")
@@ -131,7 +133,13 @@ def ask_and_speak(prompt: str):
                 prompt_prefix = prompt_prefix.replace(key, str(value))
 
         # stream = ollama.chat(model="deepseek-r1:1.5b", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
-        stream = ollama.chat(model="llama3.2:1b", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
+        # stream = ollama.chat(model="gemma3:4b-it-qat", messages=[{"role": "user", "content": prompt_prefix + prompt}], stream=True)
+        
+        if len(chat_history) == 0:
+            chat_history.append({"role": "user", "content": prompt_prefix + prompt})
+        
+        stream = ollama.chat(model="gemma3:1b", messages={"role": "user", "content": prompt_prefix + prompt}, stream=True)
+        # stream = ollama.chat(model="gemma3:1b", messages=chat_history, stream=True)
         buffer = ""
         combined_text = ""
         thinks = False
@@ -168,6 +176,8 @@ def ask_and_speak(prompt: str):
             translated_buffer = translate(buffer.strip(), flang="en", tlang="de")
             asyncio.run(tts(translated_buffer))
 
+        chat_history.append({"role": "assistant", "content": combined_text})
+        print(chat_history)
         return combined_text
     except Exception as e:
         print(f"Error in ask_and_speak: {e}")
@@ -221,16 +231,20 @@ def check_files() -> None:
             age_in_seconds = current_time - file_creation_time
 
             if age_in_seconds > 30:
-                os.remove(file_path)
+                try:
+                    pygame.mixer.music.stop()  # Stoppt ggf. laufende Wiedergabe
+                    os.remove(file_path)
+                except PermissionError:
+                    print(f"Datei {file_path} wird noch verwendet, Löschen übersprungen")
 
 porcupine = pvporcupine.create(access_key=access_key, keywords=keywords)
 recoder = PvRecorder(device_index=-1, frame_length=porcupine.frame_length)
 
 def listen_for_follow_up() -> bool:
     temp_filename = audio_name(16)
-    record.recognize_from_mic(temp_filename)
+    record_old.recognize_from_mic(temp_filename)
 
-    recognized_result = record.file_recognize(temp_filename)
+    recognized_result = record_old.file_recognize(temp_filename)
 
     # return recognized_result
 
@@ -248,8 +262,8 @@ try:
         if keyword_index >= 0:
             play_sound("startup")
             command_file = listen_for_command()
-            text = record.file_recognize(command_file)[1]
-            play_sound("done")
+            text = record_old.file_recognize(command_file)[1]
+            play_sound("chime")
 
             print("Verstandener Text: " + text)
             
@@ -262,7 +276,7 @@ try:
 
             while lfu[0]:
                 print("\n\n")
-                play_sound("done")
+                play_sound("chime")
                 check_files()
                 ask_and_speak(translate(text=lfu[1], flang="de", tlang="en"))
                 lfu = listen_for_follow_up()

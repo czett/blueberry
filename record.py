@@ -1,112 +1,82 @@
-import speech_recognition as sr
 import sounddevice as sd
 import numpy as np
 import wave
-import time
-import os
+import webrtcvad
+from vosk import Model, KaldiRecognizer
+import json
+import collections
 
-class AudioRecorder:
-    def __init__(self, samplerate=16000, channels=1):
+model = Model("models/de/vosk-model-small-de-0.15")
+
+class VADAudio:
+    def __init__(self, aggressiveness=3, samplerate=16000, frame_duration=30):
+        self.vad = webrtcvad.Vad(aggressiveness)
         self.samplerate = samplerate
-        self.channels = channels
+        self.frame_duration = frame_duration  # ms
+        self.frame_size = int(samplerate * frame_duration / 1000)  # samples per frame
+        self.buffer = collections.deque(maxlen=10)
         self.recording = False
         self.frames = []
 
-    def _callback(self, indata, frames, time, status):
+    def frame_generator(self, indata):
+        # indata is float32 numpy array, convert to int16 bytes for VAD
+        pcm_data = (indata * 32767).astype(np.int16).tobytes()
+        return pcm_data
+
+    def process_audio(self, indata, frames, time, status):
+        pcm = self.frame_generator(indata[:, 0])
+        is_speech = self.vad.is_speech(pcm, self.samplerate)
+        self.buffer.append(is_speech)
+
+        if not self.recording and any(self.buffer):
+            self.recording = True
+            print("Start recording...")
+        
         if self.recording:
-            self.frames.append(indata.copy())
+            self.frames.append(pcm)
+            # Stop recording if silence detected for ~300ms (10 frames * 30ms)
+            if not any(self.buffer):
+                print("Silence detected, stop recording.")
+                raise sd.CallbackStop()
 
-    def start(self):
-        self.frames = []
-        self.recording = True
-        self.stream = sd.InputStream(samplerate=self.samplerate,
-                                     channels=self.channels,
-                                     callback=self._callback)
-        self.stream.start()
+def recognize_from_mic(fn: str):
+    vad_audio = VADAudio()
 
-    def stop(self):
-        self.recording = False
-        self.stream.stop()
-        self.stream.close()
+    with sd.InputStream(samplerate=vad_audio.samplerate, channels=1, dtype='float32',
+                        blocksize=vad_audio.frame_size, callback=vad_audio.process_audio):
+        print("Listening for speech...")
+        try:
+            sd.sleep(10000)  # max 10 sec recording
+        except sd.CallbackStop:
+            pass
 
-    def get_audio(self):
-        if self.frames:
-            return np.concatenate(self.frames)
-        return np.array([])
+    # Save recording to WAV
+    audio_data = b''.join(vad_audio.frames)
+    filepath = f"audio/{fn}.wav"
+    with wave.open(filepath, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(vad_audio.samplerate)
+        wf.writeframes(audio_data)
 
-r = sr.Recognizer()
+    return file_recognize(fn)
 
-if not os.path.exists("audio"):
-    os.makedirs("audio")
-
-def file_recognize(fn):
+def file_recognize(fn: str):
     filename = f"audio/{fn}.wav"
-    
-    try:
-        with sr.AudioFile(filename) as source:
-            audio = r.record(source)
-            text = r.recognize_google(audio, language="de-DE")
-            return (True, text)
-    except sr.UnknownValueError:
-        return (False, "Google Speech Recognition didn't understand.")
-    except sr.RequestError as e:
-        return (False, f"Error with Google Speech Recognition: {e}")
-
-def recognize_from_mic(fn):
-    samplerate = 16000
-    min_duration = 1.5
-    silence_threshold = 0.02
-    silence_count = 0
-    duration = 0
-    
-    audio_recording = []
-    
+    wf = wave.open(filename, "rb")
+    rec = KaldiRecognizer(model, wf.getframerate())
+    result_text = ""
     while True:
-        audio_chunk = sd.rec(int(samplerate), samplerate=samplerate, channels=1, dtype="float32")
-        sd.wait()
-        audio_chunk = audio_chunk.flatten()
-        audio_recording.extend(audio_chunk)
-        duration += 1
-        if duration >= 2:
+        data = wf.readframes(4000)
+        if len(data) == 0:
             break
+        if rec.AcceptWaveform(data):
+            result = json.loads(rec.Result())
+            result_text += result.get("text", "") + " "
+    result = json.loads(rec.FinalResult())
+    result_text += result.get("text", "")
 
-    while True:
-        audio_chunk = sd.rec(int(samplerate), samplerate=samplerate, channels=1, dtype="float32")
-        sd.wait()
-        audio_chunk = audio_chunk.flatten()
-        amplitude = np.max(np.abs(audio_chunk))
-        
-        if amplitude < silence_threshold:
-            silence_count += 1
-        else:
-            silence_count = 0
-        
-        if silence_count >= min_duration:
-            break
-        
-        audio_recording.extend(audio_chunk)
-        duration += 1
-
-    audio_recording = np.array(audio_recording)
-    audio_recording = np.int16(audio_recording / np.max(np.abs(audio_recording)) * 32767)
-
-    output_path = f"audio/{fn}.wav"
-    with wave.open(output_path, "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(samplerate)
-        wf.writeframes(audio_recording.tobytes())
-
-    sd.wait()
-
-def record_fixed_duration(filename: str, duration: int, samplerate: int = 44100):
-    audio_recording = sd.rec(int(samplerate * duration), samplerate=samplerate, channels=1, dtype="float32")
-    sd.wait()
-    audio_recording = np.array(audio_recording).flatten()
-    audio_recording = np.int16(audio_recording / np.max(np.abs(audio_recording)) * 32767)
-    
-    with wave.open(f"audio/{filename}.wav", "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(samplerate)
-        wf.writeframes(audio_recording.tobytes())
+    if result_text.strip():
+        return (True, result_text.strip())
+    else:
+        return (False, "")
